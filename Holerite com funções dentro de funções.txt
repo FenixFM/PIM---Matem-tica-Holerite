@@ -1,0 +1,156 @@
+#include <stdio.h>
+// Booleano é usado, mas poderia ser substituido por int = 0 ou 1
+#include <stdbool.h>
+
+// Estrutura para o funcionário, para quem o holerite será criado
+typedef struct {
+  // Informações do funcionário (ID, nome, função)
+  int id;
+  char nome[50];
+  char funcao[50];
+  // Salario base, verba salarial (se é de risco, se é noturno, quantas horas
+  // extras é int mas talvez devesse ser float)
+  float salBase;
+  bool risco;
+  bool noturno;
+  int horasExtra;
+  // Verba indenizatoria (vale-transporte, vale-refeição)
+  float valeT;
+  float valeR;
+  // Dias no contrato, DSN, faltas, faltas descontadas de DSN
+  int dias;
+  int DSN;
+  int faltas;
+  int faltasDSN;
+  // Porcentagem do adiantamento
+  float adiantamento;
+  // Por quantos dependentes o funcionário é responsável
+  int dependentes;
+} funcionario;
+
+// Estrutura para o cálculo que será feito baseado em informações do funcionário
+typedef struct {
+  // Bonus por ser de risco, bonus por ser noturno, bonus por horas extras, dias
+  // comparecidos
+  float risco;
+  float noturno;
+  float horasExtra;
+  int totalDias;
+  // Verba salarial, verba indenizatoria, remuneração
+  float verbaSal;
+  float verbaInde;
+  float remuneracao;
+  // Porcentagem de VT, porcentagem de VR, dedução por dependentes, valor do
+  // INSS
+  float VT;
+  float VR;
+  float deducao;
+  float INSS;
+  // Base de cálculo IRRF, valor do IRRF, valor do adiantamento
+  float baseCalc;
+  float IRRF;
+  float adiantamento;
+  // Total de descontos, porcentagem do FGTS, valor do FGTS, salário líquido
+  float desconto;
+  float FGTS;
+  float fundoGar;
+  float salLiq;
+} holerite;
+
+funcionario atribuiFunc(funcionario f) {
+  f.salBase = 2008.99;
+  f.risco = false;
+  f.noturno = false;
+  f.horasExtra = 0;
+  f.valeT = 8.80 * 22;
+  f.valeR = 10 * 22;
+  f.dias = 21;
+  f.DSN = 10;
+  f.faltas = 4;
+  f.faltasDSN = 1;
+  f.adiantamento = 0;
+  f.dependentes = 1;
+  return f;
+}
+
+float calculoINSS(float remuneracao) {
+  float INSS = 0;
+  if (remuneracao <= 1212)
+    INSS = 0.075 * remuneracao;
+  else if (remuneracao <= 2427.35)
+    INSS = 0.09 * remuneracao;
+  else if (remuneracao <= 3641.03)
+    INSS = 0.12 * remuneracao;
+  else if (remuneracao <= 7087.22)
+    INSS = 0.14 * remuneracao;
+  else
+    INSS = 0.275 * remuneracao;
+  return INSS;
+}
+
+float calculoIRRF(float baseCalc) {
+  float IRRF;
+  if (baseCalc <= 1903.98)
+    IRRF = 0;
+  else if (baseCalc <= 2826.65)
+    IRRF = 0.075 * baseCalc;
+  else if (baseCalc <= 3751.05)
+    IRRF = 0.15 * baseCalc;
+  else if (baseCalc <= 4664.68)
+    IRRF = 0.225 * baseCalc;
+  else
+    IRRF = 0.275 * baseCalc;
+  return IRRF;
+}
+
+holerite calculoHoler(funcionario f, holerite h) {
+
+  h.totalDias = f.dias + f.DSN - f.faltas - f.faltasDSN;
+
+  h.risco = (f.risco) ? f.salBase * 0.3 : 0;
+  h.noturno = (f.noturno) ? f.salBase * 0.2 : 0;
+  h.horasExtra = f.horasExtra * (f.salBase / 220) * 0.5;
+  h.verbaSal = h.risco + h.noturno + h.horasExtra;
+  h.verbaInde = f.valeT + f.valeR;
+
+  h.remuneracao = f.salBase + h.verbaSal + h.verbaInde;
+
+  h.INSS = calculoINSS(h.remuneracao);
+  h.baseCalc = h.remuneracao - h.INSS;
+  h.IRRF = calculoIRRF(h.baseCalc);
+  h.deducao = f.dependentes * 150;
+  if (h.deducao > h.IRRF) h.IRRF = 0;
+  else h.IRRF -= h.deducao;
+  h.VT = f.salBase * 0.06;
+  h.VR = f.valeR * 0.06;
+  h.adiantamento = f.adiantamento * h.remuneracao;
+
+  h.desconto = h.INSS + h.IRRF + h.VT + h.VR + f.adiantamento;
+
+  h.salLiq = h.remuneracao - h.desconto;
+
+  return h;
+}
+
+int escrever(funcionario f, holerite h) {
+  printf("%d dias\n", h.totalDias);
+  printf("Verba salarial: R$ %.2f\n", h.verbaSal);
+  printf("Verba indenizacional: R$ %.2f\n", h.verbaInde);
+  printf("Remuneração: R$ %.2f\n", h.remuneracao);
+  printf("INSS: R$ %.2f\n", h.INSS);
+  printf("IRRF: R$ %.2f\n", h.IRRF);
+  printf("Desconto: R$ %.2f\n", h.desconto);
+  printf("Salário líquido: R$ %.2f\n", h.salLiq);
+  return 1;
+}
+
+int main(void) {
+
+  funcionario f;
+  f = atribuiFunc(f);
+  holerite h;
+  h = calculoHoler(f, h);
+  int impressao = escrever(f, h);
+
+  return 0;
+}
