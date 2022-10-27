@@ -1,15 +1,14 @@
-#include <stdio.h>
-// Booleano é usado, mas poderia ser substituido por int = 0 ou 1
 #include <stdbool.h>
+#include <stdio.h>
 
-// Estrutura para o funcionário, para quem o holerite será criado
+// Estrutura para armazenar as informaçoes do funcionário, que serão fornecidas
+// posteriormente
 typedef struct {
-  // Informações do funcionário (ID, nome, função)
+  // ID, nome, cargo
   int id;
   char nome[50];
   char funcao[50];
   // Salario base, verba salarial (se é de risco, se é noturno, quantas horas
-  // extras é int mas talvez devesse ser float)
   float salBase;
   bool risco;
   bool noturno;
@@ -57,6 +56,8 @@ typedef struct {
   float salLiq;
 } holerite;
 
+// Fornce as informações do usuário. Nesta iteração está fixo; estou fazendo uma
+// forma para pegar as informações da lista de funcionários
 funcionario atribuiFunc(funcionario f) {
   f.salBase = 2008.99;
   f.risco = false;
@@ -73,6 +74,7 @@ funcionario atribuiFunc(funcionario f) {
   return f;
 }
 
+// Calcular o INSS em específico
 float calculoINSS(float remuneracao) {
   float INSS = 0;
   if (remuneracao <= 1212)
@@ -88,6 +90,7 @@ float calculoINSS(float remuneracao) {
   return INSS;
 }
 
+// Calcular o IRRF em específico
 float calculoIRRF(float baseCalc) {
   float IRRF;
   if (baseCalc <= 1903.98)
@@ -103,6 +106,7 @@ float calculoIRRF(float baseCalc) {
   return IRRF;
 }
 
+// Calcular o salário baseado nas informações do funcionário
 holerite calculoHoler(funcionario f, holerite h) {
 
   h.totalDias = f.dias + f.DSN - f.faltas - f.faltasDSN;
@@ -115,12 +119,16 @@ holerite calculoHoler(funcionario f, holerite h) {
 
   h.remuneracao = f.salBase + h.verbaSal + h.verbaInde;
 
+  //Função dentro de função
   h.INSS = calculoINSS(h.remuneracao);
   h.baseCalc = h.remuneracao - h.INSS;
+  //Função dentro de função
   h.IRRF = calculoIRRF(h.baseCalc);
   h.deducao = f.dependentes * 150;
-  if (h.deducao > h.IRRF) h.IRRF = 0;
-  else h.IRRF -= h.deducao;
+  if (h.deducao > h.IRRF)
+    h.IRRF = 0;
+  else
+    h.IRRF -= h.deducao;
   h.VT = f.salBase * 0.06;
   h.VR = f.valeR * 0.06;
   h.adiantamento = f.adiantamento * h.remuneracao;
@@ -132,6 +140,8 @@ holerite calculoHoler(funcionario f, holerite h) {
   return h;
 }
 
+// Escrever os dados que foram calculados; por enquanto está super simples, deve
+// ficar mais estiloso na versão final
 int escrever(funcionario f, holerite h) {
   printf("%d dias\n", h.totalDias);
   printf("Verba salarial: R$ %.2f\n", h.verbaSal);
