@@ -1,5 +1,9 @@
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
+
+#define MAX_LINES 100
+#define MAX_LEN 1000
 
 // Estrutura para armazenar as informaçoes do funcionário, que serão fornecidas
 // posteriormente
@@ -56,21 +60,26 @@ typedef struct {
   float salLiq;
 } holerite;
 
+//Estrutura para ler texto do arquivo
+typedef struct {
+  char texto[MAX_LINES][MAX_LEN];
+} pagina;
+
 // Fornce as informações do usuário. Nesta iteração está fixo; estou fazendo uma
 // forma para pegar as informações da lista de funcionários
-funcionario atribuiFunc(funcionario f) {
-  f.salBase = 2008.99;
-  f.risco = false;
-  f.noturno = false;
-  f.horasExtra = 0;
-  f.valeT = 8.80 * 22;
-  f.valeR = 10 * 22;
-  f.dias = 21;
-  f.DSN = 10;
-  f.faltas = 4;
-  f.faltasDSN = 1;
-  f.adiantamento = 0;
-  f.dependentes = 1;
+funcionario atribuiFunc(funcionario f, pagina p) {
+  f.salBase = atof(p.texto[4]);
+  f.risco = atoi(p.texto[5]);
+  f.noturno = atoi(p.texto[6]);
+  f.horasExtra = atoi(p.texto[7]);
+  f.valeT = atof(p.texto[8]);
+  f.valeR = atof(p.texto[9]);
+  f.dias = atoi(p.texto[10]);
+  f.DSN = atoi(p.texto[11]);
+  f.faltas = atoi(p.texto[12]);
+  f.faltasDSN = atoi(p.texto[13]);
+  f.adiantamento = atof(p.texto[14]);
+  f.dependentes = atoi(p.texto[15]);
   return f;
 }
 
@@ -133,7 +142,7 @@ holerite calculoHoler(funcionario f, holerite h) {
   h.VR = f.valeR * 0.06;
   h.adiantamento = f.adiantamento * h.remuneracao;
 
-  h.desconto = h.INSS + h.IRRF + h.VT + h.VR + f.adiantamento;
+  h.desconto = h.INSS + h.IRRF + h.VT + h.VR + h.adiantamento;
 
   h.salLiq = h.remuneracao - h.desconto;
 
@@ -149,6 +158,8 @@ int escrever(funcionario f, holerite h) {
   printf("Remuneração: R$ %.2f\n", h.remuneracao);
   printf("INSS: R$ %.2f\n", h.INSS);
   printf("IRRF: R$ %.2f\n", h.IRRF);
+  printf("Adiantamento f: R$ %.2f\n", f.adiantamento);
+  printf("Adiantamento h: R$ %.2f\n", h.adiantamento);
   printf("Desconto: R$ %.2f\n", h.desconto);
   printf("Salário líquido: R$ %.2f\n", h.salLiq);
   return 1;
@@ -156,11 +167,58 @@ int escrever(funcionario f, holerite h) {
 
 int main(void) {
 
+  pagina eu, chaves, dados;
+  
+  FILE *txt;
+  txt = fopen("funcionarios.txt", "r");
+  if (txt == NULL) {
+    printf("Erro\n");
+    return 1;
+  }
+  else {
+    //Ler linha por linha
+    int line = 0;
+    while (!feof(txt) && !ferror(txt)) {
+      if (fgets(eu.texto[line], MAX_LEN, txt) != NULL) {
+        line++;
+      }
+    }
+    //Fechar arquivo depois de ler
+    fclose(txt);
+    //ID do funcionário; será um input quando houver mais de 1
+    int id = 1;
+    //O ID do funcionário será a linha do texto
+    //Porque arrays começam a contar a partir do 0, subtraia 1 da linha
+    int selec = id - 1;
+    //Criar cópia para não alterar texto
+    char copia[MAX_LEN];
+    strcpy(copia, eu.texto[selec]);
+    //Contador para loops
+    int i = 0;
+
+    char *token = strtok(copia, "#");
+    while (token != NULL) {
+      strcpy(chaves.texto[i], token);
+      token = strtok(NULL, "$");
+      strcpy(dados.texto[i], token);
+      i++;
+      token = strtok(NULL, "#");
+    }
+
+    //Escrever o que foi lido do arquivo (só para demonstrar se está tudo certo; não fará parte do produto final)
+    for (int c = 0; c < i; c++) {
+      printf("%s: ", chaves.texto[c]);
+      printf("%s\n", dados.texto[c]);
+    }
+    printf("\n");
+  }
+
   funcionario f;
-  f = atribuiFunc(f);
+  //Atribuir valores aos dados do funcionário
+  f = atribuiFunc(f, dados);
   holerite h;
   h = calculoHoler(f, h);
   int impressao = escrever(f, h);
 
   return 0;
-}
+  }
